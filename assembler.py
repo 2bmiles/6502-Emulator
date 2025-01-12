@@ -4,7 +4,7 @@ import convert
 import re
 from collections import defaultdict
 
-def get_addressing_mode(line, symbols):
+def get_addressing_mode(line):
     first = line[0]
     if first == "ASL" or first == "ROL" or first == "LSR" or first == "ROR":
         return "A"
@@ -17,10 +17,10 @@ def get_addressing_mode(line, symbols):
         return "#"
     elif first == "JMP" and second[0] == "(":
         return "ind"
-    if second[0] != "$" and second[0] != "(": # this is logic for forward references
-        return "re-eval" #with just name of symbol, how do i know if it is absolute or zeropage?!?!?
-                         #assume absolute,  reserve full space, flag symbol for re-evaluation :O
-    # abs and zpg
+    elif first == "JMP" or first == "JSR":
+        return "abs"
+    if second[0] != "$" and second[0] != "(":
+        return "label"
     if second[0] == "$" and len(line) == 2:
         if len(second) == 3:
             return "zpg"
@@ -52,41 +52,56 @@ def parse_program(program):
 def assemble(program):
     program = parse_program(program)
     hex_code = []
-    symbols = defaultdict(str)
+    labels = defaultdict(str)
+    variables = defaultdict(str)
     current_location = 0
-    re_evals = set()
+    print(program)
+    # first pass
     for line in program:
         if "=" in line:
-            symbols[line[0]] = line[2]
-        elif line[0][-1] == ":":
-            symbols[line[0][:-1]] = convert.dth_address(current_location)
-        else:
+            variables[line[0]] = line[2]
+    # second pass
+    for line in program:
+        print(line)
+        if line[0][-1] == ":":
+            print(convert.dth_address(current_location))
+            labels[line[0][:-1]] = convert.dth_address(current_location)
+        elif "=" not in line:
             for token in line:
-                if token in symbols.keys():
-                    line[line.index(token)] = symbols[token]
-            addressing_mode = get_addressing_mode(line, symbols)
+                if token in labels.keys():
+                    line[line.index(token)] = labels[token]
+                    print(token)
+                    print(labels[token])
+                if token in variables.keys():
+                    line[line.index(token)] = variables[token]
+                    print(token)
+                    print(variables[token])
+            addressing_mode = get_addressing_mode(line)
             match addressing_mode:
-                case "impl":
+                case "impl"|"A":
                     current_location += 1
                 case "#"|"zpg"|"zpg,X"|"zpg,Y"|"rel"|"ind,X"|"Y,ind":
                     current_location += 2
-                case "abs"|"abs,X"|"abs,Y"|"ind":
+                case "abs"|"abs,X"|"abs,Y"|"ind"|"label":
                     current_location += 3
-                case "re-eval":
-                    current_location += 3
-                    re_evals.add(line[1])
+        print(convert.dth_byte(current_location))
+    print(variables, labels)
+    # third pass
     current_location = 0
     for line in program:
         # reminder to take care of comments
         if "=" not in line and line[0][-1] != ":":
             for token in line:
-                if token in symbols.keys():
-                    line[line.index(token)] = symbols[token]
+                if token in labels.keys():
+                    line[line.index(token)] = labels[token]
+                if token in variables.keys():
+                    line[line.index(token)] = variables[token]
+            print(line)
             first = line[0]
             if first == "JMP" or first == "JSR":
                 if len(line[1]) == 3:
                     line[1] = line[1][0] + "00" + line[1][1:]
-            addressing_mode = get_addressing_mode(line, symbols)
+            addressing_mode = get_addressing_mode(line)
             hex_code.append(opcodes.opcodes[(line[0], addressing_mode)])
             match addressing_mode:
                 case "#":
@@ -95,12 +110,30 @@ def assemble(program):
                     else:
                         hex_code.append(convert.dth_byte(int(line[1][1:]))[1:])
                     current_location += 2
-                case "impl":
+                case "impl"|"A":
                     current_location += 1
                 case "ind":
-                    hex_code.append(line[1][4:6])
-                    hex_code.append(line[1][2:4])
+                    if line[1][1] == "$":
+                        hex_code.append(variables[line[1][1:-1]][4:6])
+                        hex_code.append(variables[line[1][1:-1]][2:4])
+                    else:
+                        print(variables[line[1][1:-1]])
+                        hex_code.append(variables[line[1][1:-1]][3:5])
+                        hex_code.append(variables[line[1][1:-1]][1:3])
                     current_location += 3
+                case "X,ind":
+                    if line[1][1] == "$":
+                        hex_code.append(line[1][2:4])
+                    else:
+                        hex_code.append(variables[line[1][1:]][1:3])
+                    current_location += 2
+                case "ind,Y":
+                    if line[1][1] == "$":
+                        hex_code.append(variables[line[1][1:-1]][2:4])
+                    else:
+                        print(variables[line[1][1:-1]])
+                        hex_code.append(variables[line[1][1:-1]][1:3])
+                    current_location += 2
                 case "abs"|"abs,X"|"abs,Y":
                     hex_code.append(line[1][3:5])
                     hex_code.append(line[1][1:3])
@@ -108,11 +141,12 @@ def assemble(program):
                 case "zpg"|"zpg,X"|"zpg,Y"|"rel":
                     hex_code.append(line[1][1:3])
                     current_location += 2
-                case "X,ind"|"ind,Y":
-                    hex_code.append(line[1][2:4])
-                    current_location += 2
-    if program[-1] != ["BRK"]:
-        current_location += 1
-    return hex_code, current_location
+    return hex_code, convert.dth_byte(current_location)
 
 print(assemble(program.program))
+
+# 3 PASSES !!11!!!1!!1111!11!1111
+# OMG OJDJFDSJSFJEIFPOSJIFJPREFSEDJ
+#EQUALS
+#COLONS
+#ASSMEBLE
