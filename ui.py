@@ -7,6 +7,7 @@ from convert import dth_address
 
 def display_ram():
     ram_display.config(state=tk.NORMAL)
+    ram_display.delete(1.0, tk.END)
     for i in range(4096):
         ram_display.insert(tk.END, dth_address(i * 16) + " ")
         for j in range(2):
@@ -35,4 +36,5 @@ ram_display.pack(side=tk.RIGHT)
 
 code_frame.pack(side=tk.BOTTOM)
 
+display_ram()
 window.mainloop()
