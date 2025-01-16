@@ -1,4 +1,3 @@
-import program
 import opcodes
 import convert
 import re
@@ -55,27 +54,20 @@ def assemble(program):
     labels = defaultdict(str)
     variables = defaultdict(str)
     current_location = 0
-    print(program)
     # first pass
     for line in program:
         if "=" in line:
             variables[line[0]] = line[2]
     # second pass
     for line in program:
-        print(line)
         if line[0][-1] == ":":
-            print(convert.dth_address(current_location))
             labels[line[0][:-1]] = convert.dth_address(current_location)
         elif "=" not in line:
             for token in line:
                 if token in labels.keys():
                     line[line.index(token)] = labels[token]
-                    print(token)
-                    print(labels[token])
                 if token in variables.keys():
                     line[line.index(token)] = variables[token]
-                    print(token)
-                    print(variables[token])
             addressing_mode = get_addressing_mode(line)
             match addressing_mode:
                 case "impl"|"A":
@@ -84,8 +76,6 @@ def assemble(program):
                     current_location += 2
                 case "abs"|"abs,X"|"abs,Y"|"ind"|"label":
                     current_location += 3
-        print(convert.dth_byte(current_location))
-    print(variables, labels)
     # third pass
     current_location = 0
     for line in program:
@@ -96,7 +86,6 @@ def assemble(program):
                     line[line.index(token)] = labels[token]
                 if token in variables.keys():
                     line[line.index(token)] = variables[token]
-            print(line)
             first = line[0]
             if first == "JMP" or first == "JSR":
                 if len(line[1]) == 3:
@@ -114,10 +103,9 @@ def assemble(program):
                     current_location += 1
                 case "ind":
                     if line[1][1] == "$":
-                        hex_code.append(variables[line[1][1:-1]][4:6])
-                        hex_code.append(variables[line[1][1:-1]][2:4])
+                        hex_code.append(line[1][4:6])
+                        hex_code.append(line[1][2:4])
                     else:
-                        print(variables[line[1][1:-1]])
                         hex_code.append(variables[line[1][1:-1]][3:5])
                         hex_code.append(variables[line[1][1:-1]][1:3])
                     current_location += 3
@@ -129,24 +117,19 @@ def assemble(program):
                     current_location += 2
                 case "ind,Y":
                     if line[1][1] == "$":
-                        hex_code.append(variables[line[1][1:-1]][2:4])
+                        hex_code.append(line[1][2:4])
                     else:
-                        print(variables[line[1][1:-1]])
                         hex_code.append(variables[line[1][1:-1]][1:3])
                     current_location += 2
                 case "abs"|"abs,X"|"abs,Y":
                     hex_code.append(line[1][3:5])
                     hex_code.append(line[1][1:3])
                     current_location += 3
-                case "zpg"|"zpg,X"|"zpg,Y"|"rel":
+                case "zpg"|"zpg,X"|"zpg,Y":
                     hex_code.append(line[1][1:3])
                     current_location += 2
-    return hex_code, convert.dth_byte(current_location)
-
-print(assemble(program.program))
-
-# 3 PASSES !!11!!!1!!1111!11!1111
-# OMG OJDJFDSJSFJEIFPOSJIFJPREFSEDJ
-#EQUALS
-#COLONS
-#ASSMEBLE
+                case "rel": # insert placeholder for loader
+                    print(line)
+                    hex_code.append(line[1])
+                    current_location += 2
+    return hex_code

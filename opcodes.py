@@ -152,3 +152,5 @@ opcodes = {
     ("SBC", "abs,X"): "FD", # subtract with carry
     ("INC", "abs,X"): "FE", # increment
 }
+
+reversed_opcodes = {opcode: instruction for instruction, opcode in opcodes.items()}
