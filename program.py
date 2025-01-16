@@ -1,5 +1,6 @@
 # DO NOT INDENT, WILL BREAK
-program = """
+program = ""
+"""
 NUM2 = $6001
 RESULT = $6002
 JMP AFTER
@@ -38,12 +39,5 @@ JSR SUBROUTINE
 LDY #$01
 LDA (ZERO_PAGE),Y
 JMP (ABS_ADDR)
-BRK
-"""
-"""
-STA FOO
-JMP BAR
-FOO = $60
-BAR:
 BRK
 """
