@@ -1,5 +1,7 @@
 # DO NOT INDENT, WILL BREAK
-program = ""
+program = """
+JMP ($0400)
+"""
 """
 NUM2 = $6001
 RESULT = $6002

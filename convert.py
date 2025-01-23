@@ -98,5 +98,22 @@ def dth_address(decimal):
     return decimal
 def dth_byte(decimal):
     decimal = dth(decimal)
-    decimal = "$" + add_zeroes(decimal, 2)
+    decimal = add_zeroes(decimal, 2)
     return decimal
+def htb_pc(address):
+    pc = [["", "", "", "", "", "", "", ""], ["", "", "", "", "", "", "", ""]]
+    if address[0] == "$":
+        address = address[1:]
+    address_bin = add_zeroes(htb(address), 16)
+    for i in range(2):
+        for j in range(8):
+            pc[i][j] = address_bin[i*8+j]
+    return pc
+def htb_byte(byte):
+    return_byte = ["", "", "", "", "", "", "", ""]
+    if byte[0] == "$":
+        byte = byte[1:]
+    byte_bin = add_zeroes(htb(byte), 8)
+    for j in range(8):
+        return_byte[j] = byte_bin[j]
+    return return_byte

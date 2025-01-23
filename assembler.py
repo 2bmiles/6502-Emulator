@@ -97,7 +97,7 @@ def assemble(program):
                     if line[1][1] == "$":
                         hex_code.append(convert.add_zeroes(line[1][2:], 2))
                     else:
-                        hex_code.append(convert.dth_byte(int(line[1][1:]))[1:])
+                        hex_code.append(convert.dth_byte(int(line[1][1:])))
                     current_location += 2
                 case "impl"|"A":
                     current_location += 1
@@ -129,7 +129,6 @@ def assemble(program):
                     hex_code.append(line[1][1:3])
                     current_location += 2
                 case "rel": # insert placeholder for loader
-                    print(line)
                     hex_code.append(line[1])
                     current_location += 2
     return hex_code
